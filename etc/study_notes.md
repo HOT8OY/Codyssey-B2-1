@@ -197,34 +197,50 @@ for n in get_numbers_yield():
 
 ---
 
-### 📌 제너레이터 함수 기초
+### 📌 제너레이터 함수 기초: '제너레이터 객체'란 뭐야?
 
-`yield`를 사용하는 함수를 **제너레이터 함수**라고 합니다.  
-호출하면 값 자체가 아니라 **제너레이터 객체**를 반환합니다.
+`yield`가 들어간 함수를 **제너레이터 함수**라고 합니다.  
+
+그런데 일반 함수와 다른 점이 있습니다.  
+일반 함수는 호출하면 **바로 실행해서 결과를 줍니다**.  
+반면 제너레이터 함수는 호출해도 **바로 실행되지 않습니다**.
+
+대신 **"나중에 값을 하나씩 꺼낼 수 있는 도구"** 를 먼저 돌려줍니다.  
+이 "도구"가 바로 **제너레이터 객체**입니다.
+
+> 📦 비유: 제너레이터 객체는 **아직 뜯지 않은 자판기** 같은 것입니다.  
+> 버튼(next)을 누를 때마다 음료 하나가 나옵니다.  
+> 자판기를 가져왔다고 음료가 쏟아지지 않듯이,  
+> 제너레이터 객체를 만든다고 값이 바로 나오지는 않습니다.
+
+코드로 확인해봅시다:
 
 ```python
 def countdown(n: int):
-    """n부터 1까지 카운트다운하는 제너레이터"""
-    print("카운트다운 시작!")
+    print("카운트다운 시작!")  # ← 아직 실행 안 됨
     while n > 0:
         yield n          # 값을 하나 내보내고 "일시 정지"
         n -= 1
     print("카운트다운 끝!")
 
-# 제너레이터 객체 생성 (아직 아무것도 실행되지 않음!)
+# 1단계: 함수를 호출해도 아직 아무것도 실행되지 않음!
 gen = countdown(3)
-print(type(gen))  # <class 'generator'>
+print(type(gen))  # <class 'generator'> ← 도구(객체)가 만들어졌을 뿐
+# "카운트다운 시작!" 이 출력되지 않음!
 
-# next()로 하나씩 꺼내기
-print(next(gen))  # 출력: 카운트다운 시작! \n 3
-print(next(gen))  # 출력: 2
-print(next(gen))  # 출력: 1
-# print(next(gen))  # StopIteration 에러 (더 이상 없음)
+# 2단계: next()로 버튼을 눌러야 비로소 실행됨
+print(next(gen))  # 이때 실행 시작! → 출력: 카운트다운 시작! → 3 반환
+print(next(gen))  # yield에서 이어서 실행 → 2 반환
+print(next(gen))  # 1 반환
+# print(next(gen))  # 더 이상 없음 → StopIteration 오류 발생
 
-# 보통은 for문으로 쓰면 자동으로 처리됨
+# ✅ 실전에서는 for문에 넣으면 자동으로 처리됨 (이게 제일 편함)
 for n in countdown(3):
-    print(n)  # 3, 2, 1
+    print(n)  # 3, 2, 1 순서로 출력
 ```
+
+**핵심 정리**: `gen = countdown(3)` 은 함수를 실행한 게 아니라,  
+"이 함수를 나중에 하나씩 실행할 수 있는 도구"를 만든 것입니다.
 
 ---
 
@@ -290,6 +306,83 @@ for tx in search_by_category("data/transactions.jsonl", "food"):
 | `yield` 제너레이터 | 몇 KB | 몇 KB (동일!) |
 
 제너레이터는 **한 번에 한 줄**만 메모리에 올리기 때문에, 데이터가 아무리 많아도 메모리 사용량이 거의 일정합니다.
+
+---
+
+### 📌 번외: Transaction(트랜잭션)의 "전부 성공 or 전부 실패"란?
+
+"트랜잭션"이라는 단어는 **거래 내역** 이라는 뜻과, **작업 묶음** 이라는 두 가지 의미로 씁니다.  
+여기서는 **"작업 묶음"** 의 의미입니다.
+
+> 💳 비유: ATM에서 계좌이체를 할 때 두 가지 작업이 동시에 일어납니다.  
+> 1. 내 통장에서 돈을 뺀다  
+> 2. 상대방 통장에 돈을 넣는다  
+>
+> 만약 1번만 성공하고 2번에서 오류가 나면 어떻게 될까요?  
+> 돈은 사라졌는데 상대방은 받지 못하는 최악의 상황이 됩니다.  
+> 그래서 은행은 **둘 다 성공하거나, 둘 다 취소(롤백)** 합니다.  
+> 이것이 "전부 성공 or 전부 실패" 입니다.
+
+파일 저장에서도 같은 개념이 적용됩니다.  
+예를 들어 `update`(수정) 을 구현할 때:
+
+```
+기존 방법 (위험):
+1. 원본 파일을 직접 수정하다가 → 오류 발생!
+2. 파일이 절반만 바뀐 채로 망가짐 💥
+```
+
+```
+안전한 방법 (원자적 교체):
+1. 임시 파일에 수정된 내용을 전부 씀
+2. 전부 다 쓴 후에만 → 임시 파일을 원본 파일로 교체
+3. 교체 전에 오류가 나도 → 원본 파일은 그대로 유지됨 ✅
+```
+
+코드로 보면 이렇습니다:
+
+```python
+import json
+import os
+import tempfile
+
+def update_transaction(filepath: str, tx_id: str, new_amount: int) -> bool:
+    """
+    특정 거래의 금액을 수정합니다.
+    원자적 교체 방식 사용: 임시 파일에 먼저 쓰고, 완료 후 교체.
+    """
+    # 1단계: 임시 파일 준비 (원본 파일 폴더와 같은 위치에 만듦)
+    dir_name = os.path.dirname(filepath)
+    found = False
+
+    # tempfile.NamedTemporaryFile: 임시 파일을 안전하게 만들어주는 표준 라이브러리
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8",
+        dir=dir_name, delete=False, suffix=".tmp"
+    ) as tmp_file:
+        tmp_path = tmp_file.name  # 임시 파일 경로 기억
+
+        # 2단계: 원본 파일을 한 줄씩 읽으면서 임시 파일에 씀
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                data = json.loads(line.strip())
+                if data["id"] == tx_id:
+                    data["amount"] = new_amount  # 해당 거래만 수정
+                    found = True
+                tmp_file.write(json.dumps(data, ensure_ascii=False) + "\n")
+
+    if not found:
+        os.remove(tmp_path)  # 해당 id가 없으면 임시 파일 삭제
+        return False
+
+    # 3단계: 임시 파일을 원본 파일로 교체 (이 순간에만 파일이 바뀜)
+    # os.replace는 원자적(atomic) 연산 — 중간 상태가 없음
+    os.replace(tmp_path, filepath)
+    return True
+```
+
+**핵심**: 오류가 3단계 이전에 발생하면 원본 파일은 손대지 않은 채로 유지됩니다.  
+이것이 파일 기반 "전부 성공 or 전부 실패" 구현 방식입니다.
 
 ---
 
@@ -407,14 +500,71 @@ add(1, 2)
 
 ### 📌 `functools.wraps` — 함수 정보 보존
 
-데코레이터를 쓰면 함수 이름과 docstring이 `wrapper`로 바뀌는 부작용이 있습니다.  
-`functools.wraps`를 써서 원래 함수 정보를 유지하세요.
+#### docstring이 뭔가요?
+
+**docstring**은 함수 바로 아래에 `"""..."""` 로 감싸서 쓰는 **설명 문자열**입니다.  
+코드를 읽는 사람이나 도구들이 "이 함수가 무엇을 하는지" 파악하는 데 쓰입니다.
+
+```python
+def add(a, b):
+    """두 수를 더합니다. ← 이게 docstring입니다"""
+    return a + b
+
+print(add.__doc__)   # 두 수를 더합니다.
+print(add.__name__)  # add
+```
+
+#### wrapper로 바뀌면 뭐가 달라지나요?
+
+데코레이터를 적용하면 실제로 내부에서 이런 일이 일어납니다:
+
+```python
+# @my_decorator 를 붙인다는 건, 아래와 완전히 동일합니다:
+add = my_decorator(add)
+
+# my_decorator 안을 보면:
+def my_decorator(func):
+    def wrapper(*args, **kwargs):  # ← 이 wrapper가 add 자리를 대체!
+        print("실행 전")
+        result = func(*args, **kwargs)
+        print("실행 후")
+        return result
+    return wrapper  # wrapper를 반환하므로, add는 사실상 wrapper가 됨
+```
+
+즉 `@my_decorator` 를 달면, `add` 는 사실 `wrapper` 함수가 됩니다.  
+이 때문에 아래와 같은 **혼란스러운 부작용**이 생깁니다:
+
+```python
+# functools.wraps 없이 데코레이터를 만들면:
+def my_decorator(func):
+    def wrapper(*args, **kwargs):
+        print("실행 전")
+        return func(*args, **kwargs)
+    return wrapper
+
+@my_decorator
+def add(a, b):
+    """두 수를 더합니다."""
+    return a + b
+
+print(add.__name__)  # ❌ 'wrapper' 출력됨 (add가 아님!)
+print(add.__doc__)   # ❌ None 출력됨 (docstring이 사라짐!)
+```
+
+`add`라는 이름의 함수를 만들었는데, 파이썬 입장에서는 `wrapper` 라고 인식하게 됩니다.  
+`--help`를 출력하거나 오류 메시지를 추적할 때 이름이 전부 `wrapper`로 뜨면 굉장히 헷갈립니다.
+
+#### `functools.wraps`로 해결하기
+
+`@functools.wraps(func)` 를 wrapper 함수 위에 붙이면,  
+original 함수의 이름과 docstring을 wrapper에 **복사**해줍니다.
 
 ```python
 import functools
 
 def my_decorator(func):
-    @functools.wraps(func)      # ← 원래 함수의 이름/docstring 유지
+    @functools.wraps(func)      # ← 원래 함수 정보를 wrapper에 붙여넣기
     def wrapper(*args, **kwargs):
         print("실행 전")
         result = func(*args, **kwargs)
@@ -427,9 +577,11 @@ def add(a, b):
     """두 수를 더합니다."""
     return a + b
 
-print(add.__name__)   # add (wraps 없으면 wrapper가 출력됨)
-print(add.__doc__)    # 두 수를 더합니다.
+print(add.__name__)   # ✅ 'add' 정상 출력
+print(add.__doc__)    # ✅ '두 수를 더합니다.' 정상 출력
 ```
+
+> **결론**: 데코레이터를 만들 때는 항상 `@functools.wraps(func)` 를 붙여주는 것이 좋은 습관입니다.
 
 ---
 
@@ -555,10 +707,66 @@ A. 미션 요구사항에 "1개 이상 구현 및 실제 적용"이 필수입니
 **Q. JSONL 파일의 확장자는 뭘 써야 하나요?**  
 A. 미션 문서에서는 `transactions.jsonl` 형태를 권장하지만, `.json`을 써도 내부 포맷이 JSONL이면 동일합니다. 가독성을 위해 `.jsonl`을 권장합니다.
 
-**Q. `*args, **kwargs`가 뭔가요?**  
-A. 데코레이터 `wrapper` 함수 안에서 원래 함수의 **모든 인자를 그대로 전달**하기 위한 표현입니다.  
-`*args`는 위치 인자 모음, `**kwargs`는 키워드 인자 모음입니다.  
-데코레이터는 어떤 함수에든 범용적으로 쓰여야 하므로, 인자 모양을 미리 정하지 않고 이렇게 씁니다.
+**Q. 위치 인자랑 키워드 인자가 뭐가 달라요? `*args`, `**kwargs`는 뭔가요?**
+
+먼저 **위치 인자(positional argument)** 와 **키워드 인자(keyword argument)** 의 차이를 알아야 합니다.
+
+```python
+def greet(name, age):
+    print(f"{name}님, {age}살이시군요!")
+
+# 위치 인자: 순서대로 넣는 방식
+greet("철수", 20)          # 첫 번째 = name, 두 번째 = age
+
+# 키워드 인자: 이름을 명시해서 넣는 방식 (순서 상관 없음)
+greet(age=20, name="철수")  # 순서가 달라도 OK!
+```
+
+**위치 인자**: 순서로 구분하는 인자 → "첫 번째 값이 name이야"  
+**키워드 인자**: 이름으로 구분하는 인자 → "name=철수 이야"
+
+---
+
+`*args` 와 `**kwargs` 는 "인자의 개수와 종류를 미리 모를 때" 쓰는 특수한 표현입니다.
+
+```python
+def show_args(*args, **kwargs):
+    print("위치 인자 모음:", args)    # 튜플 형태로 받음
+    print("키워드 인자 모음:", kwargs) # 딕셔너리 형태로 받음
+
+show_args(1, 2, 3, name="철수", age=20)
+# 출력:
+# 위치 인자 모음: (1, 2, 3)
+# 키워드 인자 모음: {'name': '철수', 'age': 20}
+```
+
+데코레이터에서 `*args, **kwargs` 를 쓰는 이유는,  
+**데코레이터는 어떤 함수에든 붙을 수 있어야** 하기 때문입니다.
+
+```python
+def my_decorator(func):
+    def wrapper(*args, **kwargs):       # 어떤 인자든 다 받아서
+        print("실행 전")
+        result = func(*args, **kwargs)  # 원래 함수에 그대로 전달!
+        print("실행 후")
+        return result
+    return wrapper
+
+@my_decorator
+def add(a, b):       # 인자 2개인 함수에도 붙고
+    return a + b
+
+@my_decorator
+def greet(name, age):  # 인자 2개인 다른 함수에도 붙고
+    print(f"{name}님, {age}살")
+
+@my_decorator
+def say_hi():          # 인자가 없는 함수에도 붙음!
+    print("안녕!")
+```
+
+만약 `wrapper(a, b)` 처럼 인자를 고정해버리면, `add`에만 쓸 수 있는 데코레이터가 되어버립니다.  
+`*args, **kwargs` 덕분에 **어떤 함수에도 붙을 수 있는 범용 데코레이터**가 완성됩니다.
 
 ---
 
