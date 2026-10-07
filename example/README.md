@@ -1,173 +1,91 @@
-# 나만의 용돈 기입장 — budget_app
+# 용돈 기입장 — 참고 구현 (example)
 
-파일 기반 가계부 CLI 프로그램입니다.  
-Python 표준 라이브러리만 사용하며, JSONL 형식으로 데이터를 영구 저장합니다.
+[`etc/plan.md`](../etc/plan.md)의 Step 0~9를 그대로 구현한 **참고용 코드**입니다.
+모든 파일에 초보자용 주석을 달아 두었습니다. 직접 만들 `budget_app/`을 짜다가 막힐 때 참고하세요.
 
----
+> [!IMPORTANT]
+> 이 Mac의 기본 `python3`는 **3.9**라서 실행되지 않습니다. (`ParamSpec`, `X | Y` 문법은 3.10 이상)
+> `python3.12`를 사용하거나 가상환경을 3.10 이상으로 만드세요.
 
 ## 실행 방법
 
-```bash
-# example 폴더 안에서 실행
-cd example
-python3 cli.py <명령어> [옵션]
-```
-
-모든 명령은 `--help` 옵션으로 사용법을 확인할 수 있습니다.
+저장소 루트(`Codyssey-B2-1/`)에서 실행합니다.
 
 ```bash
-python3 cli.py --help
-python3 cli.py list --help
-python3 cli.py summary --help
+python3.12 -m example --help              # 전체 명령 목록
+python3.12 -m example <명령> --help       # 명령별 사용법
+python3.12 -m example --data-dir ./mydata list   # 전역 옵션은 명령보다 앞에
 ```
 
----
+> 직접 만드는 `budget_app/`에서는 `python -m budget_app ...`이 됩니다.
+> 이 코드는 상대 import(`from .models import ...`)만 쓰므로 폴더째 복사해도 그대로 동작합니다.
 
-## 저장 파일 위치 및 형식
+## 파일 구성 (읽는 순서 추천)
 
-기본 저장 위치: `./data/` (변경하려면 `--data-dir <경로>` 옵션 사용)
+| 순서 | 파일 | 계층 | 핵심 개념 |
+| --- | --- | --- | --- |
+| 1 | [errors.py](errors.py) | 공통 | 예외 상속, message + hint |
+| 2 | [models.py](models.py) | 모델 | `dataclass`, `__post_init__` 검증, `Literal`, `@property`, `@classmethod` |
+| 3 | [repository.py](repository.py) | 저장소 | `yield` 스트리밍, 임시 파일 + `os.replace` 원자적 교체 |
+| 4 | [decorators.py](decorators.py) | 공통 | 데코레이터, `functools.wraps`, `ParamSpec` |
+| 5 | [services.py](services.py) | 서비스 | 제너레이터 체인, `heapq.nlargest`, CSV |
+| 6 | [cli.py](cli.py) | CLI | `argparse` 서브커맨드, 대화형 재입력, 로깅 설정 |
+| 7 | [\_\_main\_\_.py](__main__.py) | 진입점 | `python -m`, 상대 import, `sys.exit(code)` |
 
-| 파일 | 형식 | 내용 |
-| :--- | :--- | :--- |
-| `data/transactions.jsonl` | JSONL | 거래 내역 (한 줄 = 거래 1건) |
-| `data/categories.jsonl` | JSONL | 카테고리 목록 |
-| `data/budgets.jsonl` | JSONL | 월별 예산 |
+## 저장 파일
 
-### JSONL 파일 예시
+기본 위치는 `./data/`(실행한 위치 기준)이고, `--data-dir`로 바꿀 수 있습니다. 형식은 JSONL(한 줄에 JSON 하나)입니다.
 
-**transactions.jsonl**
-```jsonl
-{"id": "TX-000001", "type": "expense", "date": "2024-01-15", "amount": 15000, "category": "food", "memo": "점심", "tags": ["meal"]}
-{"id": "TX-000002", "type": "income", "date": "2024-01-16", "amount": 3000000, "category": "salary", "memo": "월급", "tags": []}
-```
+| 파일 | 한 줄 예시 |
+| --- | --- |
+| `transactions.jsonl` | `{"id": "TX-000001", "type": "expense", "date": "2024-01-15", "amount": 15000, "category": "food", "memo": "점심", "tags": ["meal"]}` |
+| `categories.jsonl` | `{"name": "food"}` |
+| `budgets.jsonl` | `{"month": "2024-01", "amount": 500000}` |
+| `app.log` | 실행 로그 (데코레이터가 기록. `--verbose`를 주면 화면에도 출력) |
 
-**categories.jsonl**
-```jsonl
-{"name": "food"}
-{"name": "transport"}
-{"name": "salary"}
-```
+## 주요 명령
 
-**budgets.jsonl**
-```jsonl
-{"month": "2024-01", "amount": 500000}
-```
-
----
-
-## 주요 명령 예시
-
-### 거래 추가
 ```bash
-python3 cli.py add
-# 날짜(YYYY-MM-DD): 2024-01-15
-# 타입(income/expense): expense
-# 카테고리: food
-# 금액(양수 정수): 15000
-# 메모(선택, 없으면 엔터): 점심
-# 태그(쉼표로 구분, 없으면 엔터): meal
-# [저장 완료] id=TX-000001
+python3.12 -m example add                                   # 대화형 입력
+python3.12 -m example list --limit 10
+python3.12 -m example search --from 2024-01-01 --to 2024-01-31 --type expense
+python3.12 -m example search --category food --q 점심 --tag meal
+python3.12 -m example budget set --month 2024-01 --amount 500000
+python3.12 -m example budget get --month 2024-01
+python3.12 -m example summary --month 2024-01 --top 3
+python3.12 -m example category list
+python3.12 -m example category add hobby                    # 이름을 생략하면 대화형으로 입력
+python3.12 -m example category remove food --replace etc
+python3.12 -m example update --id TX-000001 --amount 20000 --memo ""
+python3.12 -m example delete --id TX-000001
+python3.12 -m example export --out export.csv --month 2024-01
+python3.12 -m example import --from import.csv
 ```
 
-### 거래 목록 조회
-```bash
-python3 cli.py list
-python3 cli.py list --limit 5
-```
+## import/export CSV 스키마
 
-### 거래 검색
-```bash
-python3 cli.py search --category food
-python3 cli.py search --from 2024-01-01 --to 2024-01-31
-python3 cli.py search --type expense --q 점심
-python3 cli.py search --tag meal
-```
+UTF-8이고 헤더 행이 필요합니다. import는 엑셀에서 저장한 BOM 붙은 UTF-8도 읽습니다.
 
-### 월별 요약
-```bash
-python3 cli.py summary --month 2024-01
-python3 cli.py summary --month 2024-01 --top 3
-```
+| column | required | 설명 |
+| --- | --- | --- |
+| date | Y | YYYY-MM-DD |
+| type | Y | income / expense |
+| category | Y | 등록된 카테고리 |
+| amount | Y | 양수 정수 |
+| memo | N | 문자열 |
+| tags | N | 쉼표 구분 문자열. 예: `"meal,회식"` (쉼표가 있으면 따옴표로 감쌈) |
 
-### 예산 설정
-```bash
-python3 cli.py budget set --month 2024-01 --amount 500000
-```
+## 설계 결정
 
-### 카테고리 관리
-```bash
-python3 cli.py category list
-python3 cli.py category add
-python3 cli.py category remove
-```
-
-### 거래 수정 (옵션 기반)
-```bash
-python3 cli.py update --id TX-000001 --amount 20000
-python3 cli.py update --id TX-000001 --memo "수정된 메모" --category transport
-python3 cli.py update --id TX-000001 --tags "meal,lunch"
-```
-
-### 거래 삭제
-```bash
-python3 cli.py delete --id TX-000001
-```
-
-### CSV 내보내기
-```bash
-python3 cli.py export --out export.csv --month 2024-01
-python3 cli.py export --out export.csv --from 2024-01-01 --to 2024-01-31
-```
-
-### CSV 가져오기
-```bash
-python3 cli.py import --from import.csv
-```
-
----
-
-## Import/Export CSV 스키마
-
-| 컬럼 | 필수 | 설명 |
-| :--- | :---: | :--- |
-| `date` | ✅ | YYYY-MM-DD 형식 |
-| `type` | ✅ | `income` 또는 `expense` |
-| `category` | ✅ | 등록된 카테고리 이름 |
-| `amount` | ✅ | 양수 정수 |
-| `memo` | ❌ | 문자열 (없으면 빈 칸) |
-| `tags` | ❌ | 쉼표(,) 구분 문자열 |
-
-- 인코딩: UTF-8
-- 헤더 행 포함 필수
-
-CSV 예시:
-```csv
-date,type,category,amount,memo,tags
-2024-01-15,expense,food,15000,점심,meal
-2024-01-16,income,salary,3000000,월급,
-```
-
----
-
-## 파일 구조
-
-```
-example/
-├── __main__.py      # python -m 실행 진입점
-├── cli.py           # CLI 계층: 명령어 파싱 및 사용자 입력 처리
-├── services.py      # 서비스 계층: 비즈니스 로직 및 입력 검증
-├── repository.py    # 저장소 계층: 파일 입출력 (JSONL 읽기/쓰기)
-├── models.py        # 모델 계층: 데이터 구조 정의 (dataclass)
-├── decorators.py    # 공통 데코레이터: 예외 처리, 시간 측정
-└── data/            # 데이터 저장 폴더 (자동 생성)
-    ├── transactions.jsonl
-    ├── categories.jsonl
-    └── budgets.jsonl
-```
-
----
-
-## 개발 환경
-
-- Python 3.10 이상
-- 외부 라이브러리 없음 (표준 라이브러리만 사용)
+| 항목 | 결정 |
+| --- | --- |
+| update | 옵션 방식으로 고정. 지정한 옵션만 수정하며, `--memo ""`처럼 빈 값을 주면 지워짐 |
+| 빈 카테고리 파일 | 기본 카테고리를 자동 생성: food, transport, rent, salary, etc |
+| 카테고리 삭제 | 사용 중이면 삭제를 막음. `--replace <대체>`를 주면 거래를 옮긴 뒤 삭제 |
+| 최신순 기준 | `(date, id)` 내림차순. 날짜가 같으면 나중에 추가된 거래가 위로 |
+| list | `heapq.nlargest`로 메모리에 N건만 유지 |
+| search | `--limit`을 생략하면 일치하는 건을 모두 정렬해 출력 |
+| import 오류 행 | 그 줄만 건너뛰고 줄 번호와 사유를 출력 |
+| export 순서 | 파일에 저장된 순서대로 스트리밍 기록 |
+| 잘못된 저장 데이터 | 깨진 줄은 경고 로그만 남기고 건너뜀 |
+| 종료 코드 | 정상 0, 앱 오류 1, argparse 옵션 오류 2, Ctrl+C 130 |
