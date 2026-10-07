@@ -1,7 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field, asdict
 from .errors import ValidationError
 from datetime import datetime
-from typing import Literal, cast
+from typing import Literal, cast, Any
 
 # ---------------------------------------------------------------------------
 # 상수와 타입 별칭
@@ -131,3 +131,97 @@ def parse_tags(value: str | list[str] | None) -> list[str]:
 # 2. 데이터 클래스들
 # ===========================================================================
 
+@dataclass
+class Transaction:
+    """거래 내역 1건을 표현하는 데이터 클래스.
+    """
+    # 생성자
+    id: str
+    type: TxType
+    date: str
+    amount: int
+    category: str
+    memo: str = ""
+    # list같은 mutable한 값은 기본값 '=[]'로 쓰면 모든 객체가 같은 리스트 하나를 공유하는 버그 발생함.
+    tags: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        """dataclass가 자동 생성한 __init__이 끝난 직후 자동 호출.
+        여기서 검증에 통과하면 Transaction 객체가 만들어지고 이는 값이 올바르다는것을 보증함.
+        """
+        self.type = parse_type(self.type)
+        self.date = parse_date(self.date)
+        self.amount = parse_amount(self.amount)
+        self.category = parse_category_name(self.category)
+        self.memo = (self.memo or "").strip()
+        self.tags = parse_tags(self.tags)
+    
+    @property
+    def month(self) -> str:
+        """'2024-01-15' -> '2024-01' (월별 요약에서 사용)"""
+        return self.date[:7]
+    
+    @property
+    def sort_key(self) -> tuple[str, str]:
+        """최신순 정렬 기준: (날짜, id)
+
+        같은 날짜에 여러 거래가 있으면 id가 큰 순으로 정렬"""
+        return (self.date, self.id)
+    
+    def to_dict(self) -> dict[str, Any]:
+        """객체 -> 딕셔너리 변환. json.dump()는 객체를 저장할 수 없음."""
+        return asdict(self)
+
+@dataclass
+class MonthlySummary:
+    """월별 요약 '결과'를 담는 데이터 클래스.
+
+    서비스(services.py)는 계산만 해서 이 객체를 돌려주고,
+    출력은 CLI(cli.py)가 담당함.
+    """
+    month: str
+    total_income: int = 0
+    total_expense: int = 0
+    count: int = 0 # 해당 월의 거래 건수
+    expense_by_category: dict[str, int] = field(default_factory=dict)
+    budget: int | None = None   # 예산이 설정되지 않앗다면 None
+
+    @property
+    def has_data(self) -> bool:
+        return self.count > 0
+    
+    @property
+    def balance(self) -> int:
+        """잔액 = 총수입 - 총지출"""
+        return self.total_income - self.total_expense
+    
+    @property
+    def budget_usage(self) -> float | None:
+        """예산 사용률(%). 예산이 없으면 None."""
+        if self.budget is None:
+            return None
+        # budget은 parse_amount를 거쳐 항상 양수이므로 0으로 나눌 걱정이 없음.
+        return self.total_expense / self.budget * 100
+    
+    @property
+    def is_over_budget(self) -> bool:
+        """예산이 None이 아니며 예산보다 총 지출이 클 경우 True"""
+        return self.budget is not None and self.total_expense > self.budget
+    
+    def top_categories(self, n: int) -> list[tuple[str,int]]:
+        """지출이 큰 카테고리 상위 n개를 [(이름, 금액), ...] 형태로 반환.
+
+        sorted의 key에 (-금액, 이름)을 주면
+          1순위: 금액 내림차순 (음수로 바꿔서 오름차순 정렬 = 원래 값 내림차순)
+          2순위: 금액이 같으면 이름 오름차순 (결과가 항상 같은 순서로 나오도록)
+        """
+        items = sorted(self.expense_by_category.items(), key=lambda kv: (-kv[1], kv[0]))
+        return items[:n]
+
+@dataclass
+class ImportResult:
+    """CSV 가져오기 결과. 몇 건 성공/실패했는지와 실패 사유를 담음."""
+    
+    imported: int = 0
+    skipped: int = 0
+    errors: list[str] = field(default_factory=list)
