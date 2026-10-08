@@ -172,6 +172,52 @@ class Transaction:
         """객체 -> 딕셔너리 변환. json.dump()는 객체를 저장할 수 없음."""
         return asdict(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Transaction":
+        """dict → 객체 변환. (파일에서 읽은 JSON 한 줄을 객체로 바꿀 때 사용)
+        """
+        try:
+            return cls(
+                id=str(data["id"]),
+                type=data["type"],
+                date=data["date"],
+                amount=data["amount"],
+                category=data["category"],
+                memo=data.get("memo") or "", # .get(키, 기본값)
+                tags=data.get("tags") or [],
+            )
+        except KeyError as error:
+            # data["id"]처럼 필수 키가 없으면 KeyError가 발생함.
+            raise ValidationError(
+                f"거래 데이터에 필수 항목 {error.args[0]!r}이(가) 없습니다.",
+                "저장 파일이 손상되었을 수 있습니다.",
+            ) from None
+
+
+@dataclass
+class Budget:
+    """월 예산 1건. 예) Budget(month="2024-01", amount=500000)"""
+
+    month: str
+    amount: int
+
+    def __post_init__(self) -> None:
+        self.month = parse_month(self.month)
+        self.amount = parse_amount(self.amount)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Budget":
+        try:
+            return cls(month=data["month"], amount=data["amount"])
+        except KeyError as error:
+            raise ValidationError(
+                f"예산 데이터에 필수 항목 {error.args[0]!r}이(가) 없습니다.",
+                "저장 파일이 손상되었을 수 있습니다.",
+            ) from None
+
 @dataclass
 class MonthlySummary:
     """월별 요약 '결과'를 담는 데이터 클래스.
