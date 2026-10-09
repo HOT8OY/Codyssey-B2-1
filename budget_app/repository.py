@@ -1,12 +1,13 @@
-from budget_app.errors import ValidationError
-from budget_app.models import Budget
+from .models import Transaction, Budget
+from .errors import ValidationError, NotFoundError
+
 import tempfile
 import logging
 import os
-from json import JSONDecodeError
 import json
+from dataclasses import replace
 from typing import Any
-from collections.abc import Iterator, Iterable
+from collections.abc import Iterator, Iterable, Callable
 from pathlib import Path
 
 # print를 대신하여 기록을 남김. 로거 설정은 cli.py의 setup_logging에서 함.
@@ -167,8 +168,142 @@ class BudgetStore:
         rewrite_jsonl(self.path, updated_records())
                 
 
+# ===========================================================================
+# 4. TransactionRepository — transactions.jsonl
+# ===========================================================================
 
+def format_tx_id(number: int) -> str:
+    """12 -> 'TX-000012' 6자리의 정수, 빈 자리는 0으로 채움."""
+    return f"{ID_PREFIX}{number:06d}"
 
+class TransactionRepository:
+    """거래 내역을 파일에 저장/조회/수정/삭제하는 클래스."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.path.touch(exist_ok=True)
+
+    # ----- 읽기 ---------------------------------------------------------
+
+    def iter_all(self) -> Iterator[Transaction]:
+        """ 모든 거래를 파일에 저장된 순서대로 하나씩 돌려줌. (스트리밍)
+
+        list/search/summary/export 등 '읽기' 기능은 전부 이 메서드에서 출발함.
+        """
+        for record in iter_jsonl(self.path):
+            try:
+                yield Transaction.from_dict(record)
+            except ValidationError as error:
+                # 검증 실패한 줄은 경고 후 건너뜀
+                logger.warning("잘못된 거래 데이터를 건너뜁니다: %s (%s)", record, error.message)
+    
+    def next_number(self) -> int:
+        """다음에 쓸 id 번호. 지금까지 나온 가장 큰 번호 + 1.
+        """
+        max_number = 0
+        for record in iter_jsonl(self.path):
+            tx_id = str(record.get("id", ""))
+            # TX-000012 -> 접두사 빼기 -> 숫자인지 확인 -> 12
+            number_part = tx_id.removeprefix(ID_PREFIX)
+            if tx_id.startswith(ID_PREFIX) and number_part.isdigit():
+                max_number = max(max_number, int(number_part))
+        return max_number + 1
+    
+    def next_id(self) -> str:
+        return format_tx_id(self.next_number())
+    
+    # ----- 추가 ---------------------------------------------------------
+
+    def add(self, tx: Transaction) -> None:
+        append_jsonl(self.path, tx.to_dict())
+    
+    def add_many(self, txs: Iterable[Transaction]) -> int:
+        """여러건을 한번에 추가 (import용).
+
+        txs에 제너레이터를 넘기면, CSV를 한 줄 읽을 때마다 바로 한 줄씩 기록됨.
+        """
+        count = 0
+        with self.path.open("a", encoding="utf-8") as file:
+            for tx in txs:
+                file.write(json.dumps(tx.to_dict(), ensure_ascii=False) + "\n")
+                count += 1
+        return count
+    
+    # ----- 수정/삭제 (전체 재작성 + 원자적 교체) ---------------------------
+
+    def _rewrite(self, transform: Callable[[dict[str, Any]], dict[str, Any] | None]) -> int:
+        """모든 줄에 transform 함수를 적용해서 파일을 다시 씁니다.
+
+        transform(record)의 반환값 규칙:
+          - 같은 dict를 그대로 반환 → 변경 없음
+          - 다른 dict를 반환       → 그 내용으로 바뀜 (수정)
+          - None을 반환            → 그 줄은 빠짐 (삭제)
+
+        반환값: 바뀌거나 삭제된 줄의 개수
+        """
+        changed = 0
+
+        def generate() -> Iterator[dict[str, Any]]:
+            nonlocal changed # 바깥 함수의 변수를 수정하겠다는 선언
+            for record in iter_jsonl(self.path):
+                new_record = transform(record)
+                if new_record is not record:
+                    changed += 1
+                if new_record is not None:
+                    yield new_record
+            
+        rewrite_jsonl(self.path, generate())
+        return changed
+    
+    def update(self, tx_id: str, changes: dict[str, Any]) -> Transaction:
+        """id가 tx_id인 거래의 일부 필드를 changed 내용으로 바꿈.
+
+        예) update("TX-000001", {"amount": 20000, "memo": "저녁})
+        """
+        updated: list[Transaction] = [] # 안쪽 함수에서 결과를 담기 위한 그릇
+
+        def transform(record: dict[str, Any]) -> dict[str, Any]:
+            if record.get("id") != tx_id:
+                return record   # 대상이 아니면 그대로
+            
+            # dataclasses.replace(객체, 필드=새값, ...)은 원본은 그대로 두고 일부 필드만 바꾼 새 객체를 만듦.
+            # Transaction 객체를 만들 때 __post_init__이 실행되어 새 값도 자동으로 검증됨.
+            new_tx = replace(Transaction.from_dict(record), **changes)
+            updated.append(new_tx)
+            return new_tx.to_dict()
+        
+        self._rewrite(transform)
+        if not updated:
+            raise NotFoundError(
+                f"id '{tx_id}'에 해당하는 거래가 없습니다.",
+                "list 또는 search 명령으로 id를 확인하세요.",
+            )
+        return updated[0]
+
+    def delete(self, tx_id: str) -> None:
+        """id가 tx_id인 거래를 삭제합니다. 없으면 NotFoundError"""
+        removed = self._rewrite(lambda r: None if r.get("id") == tx_id else r)
+        if removed == 0:
+            raise NotFoundError(
+                f"id '{tx_id}'에 해당하는 거래가 없습니다.",
+                "list 또는 search 명령으로 id를 확인하세요.",
+            )
+    
+    def replace_category(self, old: str, new: str) -> int:
+        """카테고리 old를 쓰는 모든 거래를 new로 바꿈. 바뀐 건수를 변환."""
+
+        def transform(record: dict[str, Any]) -> dict[str, Any]:
+            if record.get("category") == old:
+                # record를 복사하면서 category만 바꾼 새 dict
+                return {**record, "category": new}
+            return record
+
+        return self._rewrite(transform)
+    
+    def count_by_category(self, name: str) -> int:
+        """카테고리 name을 쓰는 거래 건수."""
+        # sum(1 for ...)은 조건에 맞는 개수를 세는 관용구
+        return sum(1 for tx in self.iter_all() if tx.category == name)
 
 
 
