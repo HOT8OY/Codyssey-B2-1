@@ -5,6 +5,7 @@ import tempfile
 import logging
 import os
 import json
+from json import JSONDecodeError
 from dataclasses import replace
 from typing import Any
 from collections.abc import Iterator, Iterable, Callable
@@ -43,8 +44,8 @@ def iter_jsonl(path: Path) -> Iterator[dict[str, Any]]:
                 logger.warning("%s %d번째 줄이 올바른 JSON이 아니라서 건너뜁니다.", path.name, line_no)
                 continue
         
-        if isinstance(record, dict):
-            yield record
+            if isinstance(record, dict):
+                yield record
 
 def append_jsonl(path:Path, record: dict[str, Any]) -> None:
     """JSONL 파일 끝에 한 줄을 추가함. 기존 내용은 건드리지 않음."""
