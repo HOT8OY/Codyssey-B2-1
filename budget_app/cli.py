@@ -23,6 +23,9 @@ cli.py — CLI(Command Line Interface) 계층: 사용자 입출력 담당
                           ├─ BudgetService.from_data_dir()
                           └─ args.handler(args, service)  → cmd_list 실행
 """
+from budget_app.services import CSV_COLUMNS
+from budget_app.models import parse_month
+from budget_app.models import VALID_TYPES
 from budget_app.models import parse_category_name
 from budget_app.models import MonthlySummary
 from budget_app.decorators import EXIT_OK
@@ -365,23 +368,79 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(handler=cmd_list)
 
     # search
+    p = sub.add_parser("search", help="조건 검색 (최신순)")
+    # dest="date_from": 파이썬 예약어 "--from"과 겹쳐서 args.from으로 쓸 수 없으므로 이름을 바꿈
+    p.add_argument("--from", dest="date_from", type=argtype(parse_date), help="시작일 YYYY-MM-DD (포함)")
+    p.add_argument("--to", dest="date_to", type=argtype(parse_date), help="종료일 YYYY-MM-DD (포함)")
+    p.add_argument("--category", help="카테고리")
+    p.add_argument("--type", choices=VALID_TYPES, help="income 또는 expense")
+    p.add_argument("--q", help="메모 키워드 (대소문자 무시)")
+    p.add_argument("--tag", help="태그")
+    p.add_argument("--limit", type=argtype(parse_positive_int), default=None,
+                    help="표시할 최대 건수(기본: 전체)")
+    p.set_defaults(handler=cmd_search)
 
-    dsdsdsdsdsdsd
+    # summary
+    p = sub.add_parser("summary", help="월별 요약 + 예산 사용률")
+    p.add_argument("--month", type=argtype(parse_month), required=True, help="YYYY-MM")
+    p.add_argument("--top", type=argtype(parse_positive_int), default=DEFAULT_TOP,
+                    help=f"지출 상위 카테고리 개수 (기본: {DEFAULT_TOP})")
+    p.set_defaults(handler=cmd_summary)
 
+    # budget (하위 명령: set / get) — 서브커맨드 안에 또 서브커맨드를 둘 수 있습니다.
+    p = sub.add_parser("budget", help="월 예산 설정/조회")
+    budget_sub = p.add_subparsers(dest="budget_cmd", required=True, metavar="<set|get>")
+    bp = budget_sub.add_parser("set", help="월 예산 저장 (같은 월이면 덮어씀)")
+    bp.add_argument("--month", type=argtype(parse_month), required=True, help="YYYY-MM")
+    bp.add_argument("--amount", type=argtype(parse_amount), required=True, help="예산 금액 (양수)")
+    bp = budget_sub.add_parser("get", help="월 예산 조회")
+    bp.add_argument("--month", type=argtype(parse_month), required=True, help="YYYY-MM")
+    p.set_defaults(handler=cmd_budget)
 
+    # category (하위 명령: add / list / remove)
+    p = sub.add_parser("category", help="카테고리 관리")
+    cat_sub = p.add_subparsers(dest="category_cmd", required=True, metavar="<add|list|remove>")
+    cat_sub.add_parser("list", help="카테고리 목록")
+    cp = cat_sub.add_parser("add", help="카테고리 추가")
+    # nargs="?": 값이 있어도 되고 없어도 되는 위치 인자. 없으면 default(None) → 대화형으로 물어봄
+    cp.add_argument("name", nargs="?", help="카테고리명 (생략하면 대화형 입력)")
+    cp = cat_sub.add_parser("remove", help="카테고리 삭제 (사용 중이면 차단)")
+    cp.add_argument("name", nargs="?", help="카테고리명 (생략하면 대화형 입력)")
+    cp.add_argument("--replace", help="사용 중인 거래를 옮길 대체 카테고리")
+    p.set_defaults(handler=cmd_category)
 
+    # update (옵션 기반)
+    p = sub.add_parser("update", help="거래 수정 (옵션 방식)")
+    p.add_argument("--id", required=True, help="수정할 거래 id (예: TX-000001)")
+    p.add_argument("--date", type=argtype(parse_date), help="YYYY-MM-DD")
+    p.add_argument("--type", choices=VALID_TYPES, help="income 또는 expense")
+    p.add_argument("--category", help="등록된 카테고리")
+    p.add_argument("--amount", type=argtype(parse_amount), help="양수 금액")
+    p.add_argument("--memo", help='메모 (빈 값 "" 으로 지우기 가능)')
+    p.add_argument("--tags", help='쉼표 구분 태그 (빈 값 "" 으로 지우기 가능)')
+    p.set_defaults(handler=cmd_update)
 
+    # delete
+    p = sub.add_parser("delete", help="거래 삭제")
+    p.add_argument("--id", required=True, help="삭제할 거래 id")
+    p.set_defaults(handler=cmd_delete)
 
+    # import — 명령 이름이 파이썬 예약어(import)여도 '문자열'이므로 문제없습니다.
+    p = sub.add_parser("import", help="CSV 가져오기",
+                       description=f"CSV 헤더: {','.join(CSV_COLUMNS)} (UTF-8)")
+    p.add_argument("--from", dest="src", type=Path, required=True, help="가져올 CSV 경로")
+    p.set_defaults(handler=cmd_import)
 
-
-
-
-
+    # export
+    p = sub.add_parser("export", help="CSV 내보내기 (기간 조건 필수)",
+                       description="--month 또는 --from/--to 중 하나 이상이 필요합니다.")
+    p.add_argument("--out", type=Path, required=True, help="저장할 CSV 경로")
+    p.add_argument("--month", type=argtype(parse_month), help="YYYY-MM")
+    p.add_argument("--from", dest="date_from", type=argtype(parse_date), help="YYYY-MM-DD")
+    p.add_argument("--to", dest="date_to", type=argtype(parse_date), help="YYYY-MM-DD")
+    p.set_defaults(handler=cmd_export)
 
     return parser
-
-
-
 
 
 # ===========================================================================
