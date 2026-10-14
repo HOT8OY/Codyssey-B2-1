@@ -10,8 +10,8 @@ TxType = Literal["income", "expense"]
 
 VALID_TYPES: tuple[str, ...] = ("income", "expense")
 
-DATE_FORMAT = "%Y-%m-%d"    # 2024-01-15
-MONTH_FORMAT = "%Y-%m"      # 2024- 01
+DATE_FORMAT = "%Y-%m-%d"    # 2026-10-15
+MONTH_FORMAT = "%Y-%m"      # 2026-10
 
 
 # ===========================================================================
@@ -20,7 +20,7 @@ MONTH_FORMAT = "%Y-%m"      # 2024- 01
 
 def parse_date(value: str) -> str:
     """ YYYY-MM_DD 형식의 날짜 문자열을 검증하고 정리하여 반환.
-    ex: parse_date(2024-1-5) -> 2024-01-05"""
+    ex: parse_date(2026-1-5) -> 2026-10-05"""
 
     text = value.strip() # 앞뒤 공백 제거
 
@@ -31,10 +31,10 @@ def parse_date(value: str) -> str:
     except ValueError:
         raise ValidationError(
             "날짜 형식이 올바르지 않습니다 (YYYY-MM-DD).",
-            "예: 2024-01-15"
+            "예: 2026-10-15"
         ) from None # 여기서 작성한 메시지로 바꿔 던지기 위해 원래 발생한 ValueError 정보를 숨김
 
-    # strftime으로 문자열을 2024-01-05처럼 10글자 형식으로 통일
+    # strftime으로 문자열을 2026-10-05처럼 10글자 형식으로 통일
     # 추후 문자열 비교만으로 크기 비교가 가능해짐.
     return parsed.strftime(DATE_FORMAT)
 
@@ -49,7 +49,7 @@ def parse_month(value: str) -> str:
     except ValueError:
         raise ValidationError(
             "월 형식이 올바르지 않습니다 (YYYY-MM).",
-            "예: 2024-01",
+            "예: 2026-10",
         ) from None
     return parsed.strftime(MONTH_FORMAT)
 
@@ -158,7 +158,7 @@ class Transaction:
     
     @property
     def month(self) -> str:
-        """'2024-01-15' -> '2024-01' (월별 요약에서 사용)"""
+        """'2026-10-15' -> '2026-10' (월별 요약에서 사용)"""
         return self.date[:7]
     
     @property
@@ -196,7 +196,7 @@ class Transaction:
 
 @dataclass
 class Budget:
-    """월 예산 1건. 예) Budget(month="2024-01", amount=500000)"""
+    """월 예산 1건. 예) Budget(month="2026-10", amount=500000)"""
 
     month: str
     amount: int

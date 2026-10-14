@@ -40,7 +40,7 @@ def print_error(message: str, hint: str = "") -> None:
 def handle_errors(func: Callable[P, int]) -> Callable[P, int]:
     """예외를 잡아 친절한 메시지로 바꾸고, 종료 코드(int)를 돌려주는 데코레이터.
 
-    감싸는 함수는 정상일 떄 0을 반환.
+    감싸는 함수는 정상일 때 0을 반환.
     예외가 발생하면 여기서 잡아서 [오류]/[힌트]를 출력하고 0이 아닌 값을 반환.
     """
 

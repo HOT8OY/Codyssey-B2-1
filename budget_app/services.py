@@ -301,7 +301,7 @@ class BudgetService:
         if not (month or date_from or date_to):
             raise ValidationError(
                 "내보낼 기간 조건이 없습니다.",
-                "--month 2024-01 또는 --from 2024-01-01 --to 2024-01-31 을 지정하세요."
+                "--month 2026-10 또는 --from 2026-10-01 --to 2026-10-31 을 지정하세요."
             )
         
         count = 0
@@ -343,13 +343,13 @@ class BudgetService:
         # 자동으로 제거해 줍니다. 일반 UTF-8 파일도 문제없이 읽습니다.
         with src.open("r", encoding="utf-8-sig", newline="") as file:
             # DictReader: 첫 줄(헤더)을 키로 삼아 각 줄을 dict로 돌려줍니다.
-            #   {"date": "2024-01-15", "type": "expense", ...}
+            #   {"date": "2026-10-15", "type": "expense", ...}
             reader = csv.DictReader(file)
             header = reader.fieldnames or []
             missing = [col for col in REQUIRED_CSV_COLUMNS if col not in header]
             if missing:
                 raise ValidationError(
-                    f"CSV 헤더에 필수 컴럼이 없습니다. {', '.join(missing)}",
+                    f"CSV 헤더에 필수 컬럼이 없습니다. {', '.join(missing)}",
                     f"첫 줄(헤더)은 다음과 같아야 합니다: {','.join(CSV_COLUMNS)}"
                 )
             

@@ -23,19 +23,11 @@ cli.py — CLI(Command Line Interface) 계층: 사용자 입출력 담당
                           ├─ BudgetService.from_data_dir()
                           └─ args.handler(args, service)  → cmd_list 실행
 """
-from budget_app.services import CSV_COLUMNS
-from budget_app.models import parse_month
-from budget_app.models import VALID_TYPES
-from budget_app.models import parse_category_name
-from budget_app.models import MonthlySummary
-from budget_app.decorators import EXIT_OK
-from budget_app.models import parse_tags
-from budget_app.models import parse_amount
-from budget_app.models import parse_type
-from budget_app.models import parse_date
-from .services import BudgetService
-from .decorators import print_error, timed, log_execution
-from .models import Transaction
+from .services import BudgetService, CSV_COLUMNS
+from .decorators import EXIT_OK, LOGGER_NAME, print_error, timed, log_execution, handle_errors
+from .models import (VALID_TYPES, Transaction, MonthlySummary,
+                    parse_month, parse_category_name, parse_tags,
+                    parse_amount, parse_type, parse_date)
 from .errors import ValidationError
 
 import argparse
@@ -47,6 +39,9 @@ from typing import TypeVar
 from pathlib import Path
 
 T = TypeVar("T")
+
+# 타입 별칭: "명령 처리 함수"의 모양. (args, service)를 받아 종료 코드 int를 돌려줌
+Handler = Callable[[argparse.Namespace, BudgetService], int]
 
 # 기본값
 DEFAULT_DATA_DIR = Path("data") # 상대 경로 -> '명령을 실행한 위치' 기준의 data 폴더
@@ -60,11 +55,11 @@ DEFAULT_TOP = 5
 def argtype(parse: Callable[[str], T]) -> Callable[[str], T]:
     """models의 parse_xxx 함수를 argparse의 type= 으로 쓸 수 있게 바꿔주는 어댑터.
 
-    argparse는 type= 함수가 argparse.ArgumentTypeError를 던지면 그 메시지르 보여주고
+    argparse는 type= 함수가 argparse.ArgumentTypeError를 던지면 그 메시지를 보여주고
     종료코드 2로 끝냅니다. 우리 함수는 ValidationError를 던지므로 '번역'이 필요합니다.
 
     parser.add_argument("--month", type=argtype(parse_month))
-        → --month 2024-13 입력 시: "argument --month: 월 형식이 올바르지 않습니다 (YYYY-MM). 예: 2024-01"
+        → --month 2026-13 입력 시: "argument --month: 월 형식이 올바르지 않습니다 (YYYY-MM). 예: 2026-10"
 
     이렇게 하면 '옵션 방식'과 '대화형 방식'이 같은 검증 함수를 공유합니다.
     """
@@ -145,7 +140,7 @@ def cmd_add(args: argparse.Namespace, service: BudgetService) -> int:
     print("새 거래를 입력합니다. (취소: Ctrl + C)")
     today = date.today().isoformat()
 
-    tx_date = ask(f"날짜(YYYY-MM-DD, 엔터={today}: ", parse_date, default=today)
+    tx_date = ask(f"날짜(YYYY-MM-DD, 엔터={today}): ", parse_date, default=today)
     tx_type = ask("타입(income/expense): ", parse_type)
 
     print(f"  (등록된 카테고리: {', '.join(service.list_categories())})")
@@ -329,7 +324,7 @@ def build_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog = f"python -m {__package__}", # prog: 도움말에 표시될 실행 방법. __package__는 현재 패키지 이름(budget_app 등)
-        description = "나만의 용동 기입장 - 파일 기반 콘솔 가계부",
+        description = "나만의 용돈 기입장 - 파일 기반 콘솔 가계부",
         epilog = f"각 명령의 자세한 사용법: python -m {__package__} <명령> --help",
     )
 
@@ -363,7 +358,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # list
     p = sub.add_parser("list", help="최신순 거래 목록")
-    p.add_argument("--limit", type=argtype(parse_date), default=DEFAULT_LIST_LIMIT,
+    p.add_argument("--limit", type=argtype(parse_positive_int), default=DEFAULT_LIST_LIMIT,
                     help=f"표시할 최대 건수 (기본: {DEFAULT_LIST_LIMIT})")
     p.set_defaults(handler=cmd_list)
 
@@ -447,9 +442,55 @@ def build_parser() -> argparse.ArgumentParser:
 # 4. 로깅 설정 / 실행 진입점
 # ===========================================================================
 
+
+def setup_logging(data_dir: Path, verbose: bool) -> None:
+    """로그 설정.
+
+    - 항상: data/app.log 파일에도 기록 (DEBUG 이상 = 전부)
+    - --verbose: 화면(stderr)에도 INFO 이상을 출력
+
+    로그 레벨 순서: DEBUG < INFO < WARNING < ERROR < CRITICAL
+    핸들러의 레벨보다 '낮은' 로그는 그 핸들러에서 무시됩니다.
+    -> 스택트레이스(DEBUG)는 파일에만 남고 화면에는 절대 나오지 않습니다.
+    """
+    data_dir.mkdir(parents=True, exist_ok=True)
+    logger = logging.getLogger(LOGGER_NAME)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False    # 상위(root) 로거로 전달하지 않음 -> 중복 출력 방지
+
+    # main()이 여러 번 호출될 때(테스트 등) 핸들러가 계속 쌓이지 않도록 기존 것 정리
+    for old in list(logger.handlers):
+        logger.removeHandler(old)
+        old.close()
+    
+    file_handler = logging.FileHandler(data_dir / "app.log", encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    logger.addHandler(file_handler)
+
+    if verbose:
+        console = logging.StreamHandler()   # 기본 출력 대상: stderr
+        console.setLevel(logging.INFO)
+        console.setFormatter(logging.Formatter("[로그] %(message)s"))
+        logger.addHandler(console)
+
+
+@handle_errors
+def dispatch(args: argparse.Namespace) -> int:
+    """준비 작업을 하고, 선택된 명령 함수를 실행합니다.
+    """
+    # @handle_errors를 '여기 한 곳'에만 붙인 이유:
+    #   로깅 설정, 서비스 생성(폴더/파일 만들기), 명령 실행 —
+    #   이 중 어디서 예외가 나든 모두 이 지점을 지나가므로 한 번에 처리됩니다.
+    #   명령 함수마다 붙이지 않아도 '모든 명령'에 적용되는 효과입니다.
+    setup_logging(args.data_dir, args.verbose)
+    service = BudgetService.from_data_dir(args.data_dir)
+    handler: Handler = args.handler
+    return handler(args, service)
+
+
 def main(argv: list[str] | None = None) -> int:
     """프로그램 진입점 함수"""
     parser = build_parser()
     args = parser.parse_args(argv)
-    # return dispatch(args)
-    return 0
+    return dispatch(args)
