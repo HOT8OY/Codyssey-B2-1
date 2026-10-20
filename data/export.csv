@@ -1,0 +1,33 @@
+date,type,category,amount,memo,tags
+2026-08-01,income,salary,1200000,8월 알바비,work
+2026-08-01,income,allowance,300000,부모님 용돈,family
+2026-08-02,expense,rent,400000,8월 월세,"fixed,house"
+2026-08-05,expense,transport,55000,교통카드 충전,
+2026-08-07,expense,food,9000,학식,meal
+2026-08-10,expense,cafe,5500,아메리카노,coffee
+2026-08-14,expense,shopping,39000,여름 티셔츠,clothes
+2026-08-18,expense,food,32000,친구랑 치킨,"meal,friend"
+2026-08-23,expense,hobby,18000,영화 관람,"movie,weekend"
+2026-08-28,expense,etc,12000,생필품,daily
+2026-09-01,income,salary,1200000,9월 알바비,work
+2026-09-01,income,allowance,300000,부모님 용돈,family
+2026-09-02,expense,rent,400000,9월 월세,"fixed,house"
+2026-09-03,expense,transport,55000,교통카드 충전,
+2026-09-06,expense,food,12000,김밥 점심,"meal,lunch"
+2026-09-09,expense,cafe,6000,카페라떼,coffee
+2026-09-13,expense,shopping,89000,운동화,clothes
+2026-09-17,income,etc,50000,중고책 판매,used
+2026-09-20,expense,hobby,45000,콘서트 예매,"concert,weekend"
+2026-09-25,expense,food,48000,추석 장보기,"meal,family"
+2026-09-29,expense,cafe,4500,아이스티,coffee
+2026-10-01,income,salary,1250000,10월 알바비,work
+2026-10-01,income,allowance,300000,부모님 용돈,family
+2026-10-02,expense,rent,400000,10월 월세,"fixed,house"
+2026-10-04,expense,transport,55000,교통카드 충전,
+2026-10-06,expense,food,8500,학식,meal
+2026-10-08,expense,cafe,5500,아메리카노,"coffee,study"
+2026-10-11,expense,hobby,25000,보드게임,"friend,weekend"
+2026-10-14,expense,food,27000,친구랑 저녁,"meal,friend"
+2026-10-16,expense,shopping,15000,노트 필기구,study
+2026-10-18,expense,transport,13200,택시,late
+2026-10-19,expense,etc,9900,휴대폰 케이스,

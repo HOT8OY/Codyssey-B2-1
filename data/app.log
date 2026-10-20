@@ -1,0 +1,76 @@
+2026-10-20 15:28:04,376 [INFO] 기본 카테고리를 생성했습니다: food, transport, rent, salary, etc
+2026-10-20 15:28:04,376 [INFO] 실행 시작: cmd_category
+2026-10-20 15:28:04,377 [INFO] 소요 시간: cmd_category 0.000초
+2026-10-20 15:28:04,377 [INFO] 실행 종료: cmd_category
+2026-10-20 15:28:04,464 [INFO] 실행 시작: cmd_category
+2026-10-20 15:28:04,465 [INFO] 소요 시간: cmd_category 0.000초
+2026-10-20 15:28:04,465 [INFO] 실행 종료: cmd_category
+2026-10-20 15:28:04,550 [INFO] 실행 시작: cmd_category
+2026-10-20 15:28:04,550 [INFO] 소요 시간: cmd_category 0.000초
+2026-10-20 15:28:04,550 [INFO] 실행 종료: cmd_category
+2026-10-20 15:28:04,637 [INFO] 실행 시작: cmd_category
+2026-10-20 15:28:04,638 [INFO] 소요 시간: cmd_category 0.000초
+2026-10-20 15:28:04,638 [INFO] 실행 종료: cmd_category
+2026-10-20 15:28:04,729 [INFO] 실행 시작: cmd_import
+2026-10-20 15:28:04,738 [INFO] 소요 시간: cmd_import 0.010초
+2026-10-20 15:28:04,738 [INFO] 실행 종료: cmd_import
+2026-10-20 15:28:04,831 [INFO] 실행 시작: cmd_budget
+2026-10-20 15:28:04,834 [INFO] 소요 시간: cmd_budget 0.002초
+2026-10-20 15:28:04,834 [INFO] 실행 종료: cmd_budget
+2026-10-20 15:28:04,925 [INFO] 실행 시작: cmd_budget
+2026-10-20 15:28:04,928 [INFO] 소요 시간: cmd_budget 0.003초
+2026-10-20 15:28:04,928 [INFO] 실행 종료: cmd_budget
+2026-10-20 15:28:05,017 [INFO] 실행 시작: cmd_budget
+2026-10-20 15:28:05,020 [INFO] 소요 시간: cmd_budget 0.003초
+2026-10-20 15:28:05,020 [INFO] 실행 종료: cmd_budget
+2026-10-20 15:28:05,113 [INFO] 실행 시작: cmd_budget
+2026-10-20 15:28:05,115 [INFO] 소요 시간: cmd_budget 0.002초
+2026-10-20 15:28:05,115 [INFO] 실행 종료: cmd_budget
+2026-10-20 15:28:05,204 [INFO] 실행 시작: cmd_summary
+2026-10-20 15:28:05,205 [INFO] 소요 시간: cmd_summary 0.002초
+2026-10-20 15:28:05,206 [INFO] 실행 종료: cmd_summary
+2026-10-20 15:28:05,295 [INFO] 실행 시작: cmd_summary
+2026-10-20 15:28:05,297 [INFO] 소요 시간: cmd_summary 0.002초
+2026-10-20 15:28:05,297 [INFO] 실행 종료: cmd_summary
+2026-10-20 15:28:05,390 [INFO] 실행 시작: cmd_summary
+2026-10-20 15:28:05,392 [INFO] 소요 시간: cmd_summary 0.001초
+2026-10-20 15:28:05,392 [INFO] 실행 종료: cmd_summary
+2026-10-20 15:28:05,485 [INFO] 실행 시작: cmd_summary
+2026-10-20 15:28:05,487 [INFO] 소요 시간: cmd_summary 0.001초
+2026-10-20 15:28:05,487 [INFO] 실행 종료: cmd_summary
+2026-10-20 15:28:05,580 [INFO] 실행 시작: cmd_list
+2026-10-20 15:28:05,584 [INFO] 소요 시간: cmd_list 0.003초
+2026-10-20 15:28:05,584 [INFO] 실행 종료: cmd_list
+2026-10-20 15:28:05,743 [INFO] 실행 시작: cmd_category
+2026-10-20 15:28:05,743 [INFO] 소요 시간: cmd_category 0.000초
+2026-10-20 15:28:05,743 [INFO] 실행 종료: cmd_category
+2026-10-20 15:37:47,464 [INFO] 실행 시작: cmd_list
+2026-10-20 15:37:47,467 [INFO] 소요 시간: cmd_list 0.003초
+2026-10-20 15:37:47,467 [INFO] 실행 종료: cmd_list
+2026-10-20 15:38:32,263 [INFO] 실행 시작: cmd_list
+2026-10-20 15:38:32,267 [INFO] 소요 시간: cmd_list 0.003초
+2026-10-20 15:38:32,267 [INFO] 실행 종료: cmd_list
+2026-10-20 15:39:12,833 [INFO] 실행 시작: cmd_list
+2026-10-20 15:39:12,846 [INFO] 소요 시간: cmd_list 0.013초
+2026-10-20 15:39:12,846 [INFO] 실행 종료: cmd_list
+2026-10-20 15:40:00,603 [INFO] 실행 시작: cmd_export
+2026-10-20 15:40:00,603 [INFO] 소요 시간: cmd_export 0.000초
+2026-10-20 15:40:00,604 [WARNING] 실행 실패: cmd_export (IsADirectoryError: [Errno 21] Is a directory: '.')
+2026-10-20 15:40:10,552 [INFO] 실행 시작: cmd_export
+2026-10-20 15:40:10,552 [INFO] 소요 시간: cmd_export 0.000초
+2026-10-20 15:40:10,552 [WARNING] 실행 실패: cmd_export (IsADirectoryError: [Errno 21] Is a directory: '.')
+2026-10-20 15:46:22,586 [INFO] 실행 시작: cmd_export
+2026-10-20 15:46:22,587 [INFO] 소요 시간: cmd_export 0.001초
+2026-10-20 15:46:22,587 [INFO] 실행 종료: cmd_export
+2026-10-20 15:47:11,541 [INFO] 실행 시작: cmd_export
+2026-10-20 15:47:11,548 [INFO] 소요 시간: cmd_export 0.007초
+2026-10-20 15:47:11,548 [INFO] 실행 종료: cmd_export
+2026-10-20 15:48:21,572 [INFO] 실행 시작: cmd_budget
+2026-10-20 15:48:21,572 [INFO] 소요 시간: cmd_budget 0.000초
+2026-10-20 15:48:21,572 [INFO] 실행 종료: cmd_budget
+2026-10-20 15:48:47,568 [INFO] 실행 시작: cmd_summary
+2026-10-20 15:48:47,570 [INFO] 소요 시간: cmd_summary 0.001초
+2026-10-20 15:48:47,570 [INFO] 실행 종료: cmd_summary
+2026-10-20 15:49:05,892 [INFO] 실행 시작: cmd_summary
+2026-10-20 15:49:05,894 [INFO] 소요 시간: cmd_summary 0.001초
+2026-10-20 15:49:05,894 [INFO] 실행 종료: cmd_summary

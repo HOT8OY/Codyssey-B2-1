@@ -1,0 +1,32 @@
+{"id": "TX-000001", "type": "income", "date": "2026-08-01", "amount": 1200000, "category": "salary", "memo": "8월 알바비", "tags": ["work"]}
+{"id": "TX-000002", "type": "income", "date": "2026-08-01", "amount": 300000, "category": "allowance", "memo": "부모님 용돈", "tags": ["family"]}
+{"id": "TX-000003", "type": "expense", "date": "2026-08-02", "amount": 400000, "category": "rent", "memo": "8월 월세", "tags": ["fixed", "house"]}
+{"id": "TX-000004", "type": "expense", "date": "2026-08-05", "amount": 55000, "category": "transport", "memo": "교통카드 충전", "tags": []}
+{"id": "TX-000005", "type": "expense", "date": "2026-08-07", "amount": 9000, "category": "food", "memo": "학식", "tags": ["meal"]}
+{"id": "TX-000006", "type": "expense", "date": "2026-08-10", "amount": 5500, "category": "cafe", "memo": "아메리카노", "tags": ["coffee"]}
+{"id": "TX-000007", "type": "expense", "date": "2026-08-14", "amount": 39000, "category": "shopping", "memo": "여름 티셔츠", "tags": ["clothes"]}
+{"id": "TX-000008", "type": "expense", "date": "2026-08-18", "amount": 32000, "category": "food", "memo": "친구랑 치킨", "tags": ["meal", "friend"]}
+{"id": "TX-000009", "type": "expense", "date": "2026-08-23", "amount": 18000, "category": "hobby", "memo": "영화 관람", "tags": ["movie", "weekend"]}
+{"id": "TX-000010", "type": "expense", "date": "2026-08-28", "amount": 12000, "category": "etc", "memo": "생필품", "tags": ["daily"]}
+{"id": "TX-000011", "type": "income", "date": "2026-09-01", "amount": 1200000, "category": "salary", "memo": "9월 알바비", "tags": ["work"]}
+{"id": "TX-000012", "type": "income", "date": "2026-09-01", "amount": 300000, "category": "allowance", "memo": "부모님 용돈", "tags": ["family"]}
+{"id": "TX-000013", "type": "expense", "date": "2026-09-02", "amount": 400000, "category": "rent", "memo": "9월 월세", "tags": ["fixed", "house"]}
+{"id": "TX-000014", "type": "expense", "date": "2026-09-03", "amount": 55000, "category": "transport", "memo": "교통카드 충전", "tags": []}
+{"id": "TX-000015", "type": "expense", "date": "2026-09-06", "amount": 12000, "category": "food", "memo": "김밥 점심", "tags": ["meal", "lunch"]}
+{"id": "TX-000016", "type": "expense", "date": "2026-09-09", "amount": 6000, "category": "cafe", "memo": "카페라떼", "tags": ["coffee"]}
+{"id": "TX-000017", "type": "expense", "date": "2026-09-13", "amount": 89000, "category": "shopping", "memo": "운동화", "tags": ["clothes"]}
+{"id": "TX-000018", "type": "income", "date": "2026-09-17", "amount": 50000, "category": "etc", "memo": "중고책 판매", "tags": ["used"]}
+{"id": "TX-000019", "type": "expense", "date": "2026-09-20", "amount": 45000, "category": "hobby", "memo": "콘서트 예매", "tags": ["concert", "weekend"]}
+{"id": "TX-000020", "type": "expense", "date": "2026-09-25", "amount": 48000, "category": "food", "memo": "추석 장보기", "tags": ["meal", "family"]}
+{"id": "TX-000021", "type": "expense", "date": "2026-09-29", "amount": 4500, "category": "cafe", "memo": "아이스티", "tags": ["coffee"]}
+{"id": "TX-000022", "type": "income", "date": "2026-10-01", "amount": 1250000, "category": "salary", "memo": "10월 알바비", "tags": ["work"]}
+{"id": "TX-000023", "type": "income", "date": "2026-10-01", "amount": 300000, "category": "allowance", "memo": "부모님 용돈", "tags": ["family"]}
+{"id": "TX-000024", "type": "expense", "date": "2026-10-02", "amount": 400000, "category": "rent", "memo": "10월 월세", "tags": ["fixed", "house"]}
+{"id": "TX-000025", "type": "expense", "date": "2026-10-04", "amount": 55000, "category": "transport", "memo": "교통카드 충전", "tags": []}
+{"id": "TX-000026", "type": "expense", "date": "2026-10-06", "amount": 8500, "category": "food", "memo": "학식", "tags": ["meal"]}
+{"id": "TX-000027", "type": "expense", "date": "2026-10-08", "amount": 5500, "category": "cafe", "memo": "아메리카노", "tags": ["coffee", "study"]}
+{"id": "TX-000028", "type": "expense", "date": "2026-10-11", "amount": 25000, "category": "hobby", "memo": "보드게임", "tags": ["friend", "weekend"]}
+{"id": "TX-000029", "type": "expense", "date": "2026-10-14", "amount": 27000, "category": "food", "memo": "친구랑 저녁", "tags": ["meal", "friend"]}
+{"id": "TX-000030", "type": "expense", "date": "2026-10-16", "amount": 15000, "category": "shopping", "memo": "노트 필기구", "tags": ["study"]}
+{"id": "TX-000031", "type": "expense", "date": "2026-10-18", "amount": 13200, "category": "transport", "memo": "택시", "tags": ["late"]}
+{"id": "TX-000032", "type": "expense", "date": "2026-10-19", "amount": 9900, "category": "etc", "memo": "휴대폰 케이스", "tags": []}
